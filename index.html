@@ -201,8 +201,9 @@ section{padding:84px 0;scroll-margin-top:60px}
 .photos.n2{grid-template-columns:1fr 1fr;grid-template-rows:1fr}
 .photos.n2>*:first-child,.photos.n1>*:first-child{grid-row:auto}
 .photos.n1{grid-template-columns:1fr;grid-template-rows:1fr}
-.photos button{all:unset;cursor:zoom-in;display:block;overflow:hidden}
-.photos img{width:100%;height:100%;object-fit:cover}
+.photos>*{min-width:0;min-height:0}
+.photos button{all:unset;cursor:zoom-in;display:block;overflow:hidden;position:relative}
+.photos img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ph{display:grid;place-items:center;text-align:center;padding:10px;background:repeating-linear-gradient(135deg,#efe9de 0 10px,#e8e1d4 10px 20px);font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#8a7f6f}
 .event .body{padding:20px 22px 22px;display:grid;gap:6px}
 .event h3{font-size:22px}
@@ -617,10 +618,10 @@ const CERT_COLORS = {"OSINT":"#2f5d7c","Threat assessment":"#8e2f2a","Crime anal
 const EVENTS = [
   {title:"JTAT East", where:"Philadelphia, PA · Association of Threat Assessment Professionals",
    text:"Regional threat assessment conference hosted by ATAP, bringing together practitioners from law enforcement, education, corporate security and mental health.",
-   note:"Attended on a merit-based scholarship", photos:["jtat-1.jpg","jtat-2.jpg","jtat-3.jpg"]},
+   note:"Attended on a merit-based scholarship", photos:["jtat-1.jpg.jpeg","jtat-2.jpg.jpeg","jtat-3.jpg.jpeg"]},
   {title:"Threat Evaluation & Reporting (TERC)", where:"Alexandria Police Department, VA · DHS National Threat Evaluation & Reporting",
    text:"Three-day in-person DHS course on identifying, evaluating and reporting threats of targeted violence alongside law enforcement partners.",
-   note:"July 2026", photos:["terc-1.jpg","terc-2.jpg"]}
+   note:"July 2026", photos:["terc-1.jpg.jpeg","terc-2.jpg.jpeg"]}
 ];
 /* ========================================= */
 
@@ -715,13 +716,14 @@ const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     return `<article class="event"><div class="photos n${Math.min(n,3)}">${slots}</div><div class="body">
       <span class="note">${e.note}</span><h3>${e.title}</h3><div class="where">${e.where}</div><p>${e.text}</p></div></article>`;
   }).join("");
-  // Accept .jpg, .jpeg, .png (any capitalization) for each photo name
-  const EXTS = [".jpg",".jpeg",".JPG",".JPEG",".png",".PNG"];
+  // If a photo isn't found, also try .jpg / .jpeg / .png endings before showing a placeholder
+  const EXTS = [".jpg",".jpeg",".JPG",".JPEG",".png",".PNG",".jpg.jpeg"];
   g.querySelectorAll("img").forEach(img => {
-    const base = img.getAttribute("src").replace(/\.(jpe?g|png)$/i, ""); let i = 0;
+    const first = img.getAttribute("src"), base = first.replace(/(\.(jpe?g|png))+$/i, "");
+    const tries = EXTS.map(e => base + e).filter(x => x !== first);
     img.addEventListener("error", () => {
-      i++;
-      if (i < EXTS.length) { const src = base + EXTS[i]; img.src = src; img.closest("button").dataset.src = src; return; }
+      const next = tries.shift();
+      if (next) { img.src = next; img.closest("button").dataset.src = next; return; }
       const d = document.createElement("div"); d.className = "ph"; d.textContent = "Photo";
       img.closest("button").replaceWith(d);
     });
