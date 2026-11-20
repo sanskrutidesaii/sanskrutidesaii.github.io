@@ -710,14 +710,22 @@ const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   g.innerHTML = EVENTS.map((e, i) => {
     const n = e.photos.length || 3;
     const slots = [...Array(Math.min(n,3)).keys()].map(k => e.photos[k]
-      ? `<button type="button" data-src="${e.photos[k]}" data-cap="${e.title}"><img src="${e.photos[k]}" alt="${e.title}, photo ${k+1}" loading="lazy"></button>`
+      ? `<button type="button" data-src="${e.photos[k]}" data-cap="${e.title}"><img src="${e.photos[k]}" alt="${e.title}, photo ${k+1}" ></button>`
       : `<div class="ph">${k === 0 ? e.title + "<br>photo" : "Photo"}</div>`).join("");
     return `<article class="event"><div class="photos n${Math.min(n,3)}">${slots}</div><div class="body">
       <span class="note">${e.note}</span><h3>${e.title}</h3><div class="where">${e.where}</div><p>${e.text}</p></div></article>`;
   }).join("");
-  g.querySelectorAll("img").forEach(img => img.addEventListener("error", () => {
-    const d = document.createElement("div"); d.className = "ph"; d.textContent = "Photo";
-    img.closest("button").replaceWith(d); }));
+  // Accept .jpg, .jpeg, .png (any capitalization) for each photo name
+  const EXTS = [".jpg",".jpeg",".JPG",".JPEG",".png",".PNG"];
+  g.querySelectorAll("img").forEach(img => {
+    const base = img.getAttribute("src").replace(/\.(jpe?g|png)$/i, ""); let i = 0;
+    img.addEventListener("error", () => {
+      i++;
+      if (i < EXTS.length) { const src = base + EXTS[i]; img.src = src; img.closest("button").dataset.src = src; return; }
+      const d = document.createElement("div"); d.className = "ph"; d.textContent = "Photo";
+      img.closest("button").replaceWith(d);
+    });
+  });
   g.addEventListener("click", ev => { const b = ev.target.closest("[data-src]"); if (!b) return;
     lbImg.src = b.dataset.src; lbImg.alt = b.dataset.cap; lbCap.textContent = b.dataset.cap; lb.classList.add("on"); });
   const close = () => lb.classList.remove("on");
